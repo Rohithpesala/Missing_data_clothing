@@ -34,13 +34,21 @@ def load_features(directory, num_files, num_instances):
 	            count+=1
 	return np.transpose(f_arr)
 
-def random_multinomial(freq_arr):
+def process_features_multinomial(arr):
+	for i in range(arr.shape[0]):
+		np.place(arr[i], np.isnan(arr[i]), 0)
+		freq = np.bincount(arr[i].astype(int))
+		np.place(arr[i], arr[i]==0, random_multinomial(freq[1:],freq[0]))
+
+def random_multinomial(freq_arr,out_len):
 	freq_arr = freq_arr.astype(float)/np.sum(freq_arr)
-	rand_num = np.random.random()
-	cdf_sum = 0.0
-	print rand_num
-	for i in range(len(freq_arr)):
-	    cdf_sum += freq_arr[i]
-	    print cdf_sum
-	    if rand_num < cdf_sum:
-	        return i+1
+	out_arr = [0 for i in range(out_len)]
+	for j in range(out_len):
+	    rand_num = np.random.random()
+	    cdf_sum = 0.0
+	    for i in range(len(freq_arr)):
+	        cdf_sum += freq_arr[i]
+	        if rand_num < cdf_sum:
+	            out_arr[j] = i+1
+	            break
+	return out_arr
