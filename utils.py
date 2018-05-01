@@ -2,6 +2,14 @@ import scipy.io as sio
 import numpy as np
 import os
 import shutil
+import torch
+
+def get_metrics(preds,truths):
+	_,pred_inds = torch.max(preds,1)
+	N = preds.size()[0]*1.0
+	correct = torch.sum(pred_inds.data == truths.data)
+	# print pred_inds,truths,correct
+	return correct/N
 
 def load_labels(directory):
 	"""
@@ -97,4 +105,57 @@ def split_nan_images(directory, label_arr):
 			pass
 		else:
 			pass
+
+def getImagesList(directory):
+	"""
+	returns a list of all the image paths in the given directory
+	"""
+	return [os.path.join(directory,filename) for filename in os.listdir(directory) if filename.endswith(".jpg")]
 	pass
+
+def prepare_env(args):
+	"""
+	Creates the necessary directories to save and log checkpoints and metrics
+	"""
+	output_dir = args.output_dir
+	run_id = args.run_id
+	output_path = os.path.join(os.getcwd(),output_dir)
+	run_path = os.path.join(output_path,run_id)
+	save_path = os.path.join(run_path,"save")
+	log_path = os.path.join(run_path,"log")
+	if not os.path.isdir(output_path):
+		os.mkdir(output_path)
+	if not os.path.isdir(run_path):
+		os.mkdir(run_path)
+		os.mkdir(save_path)
+		os.mkdir(log_path)
+
+def load_model(args):
+	model_type = args.model_type
+	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save")
+	if os.path.isdir(save_path):
+		#load checkpoint
+		filename = os.path.join(save_path,"last_checkpoint")
+		print "model load"
+		return torch.load(filename)
+	else:
+		raise ValueError("No saved model")
+
+def save_model(args,model,best=False):
+	checkpoint_name = "last_checkpoint"
+	if best:
+		checkpoint_name = "best_checkpoint"
+	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
+	torch.save(model.cpu(),save_path)
+
+def save_optimizer(args,optimizer,best=False):
+	checkpoint_name = "last_checkpoint_optim"
+	if best:
+		checkpoint_name = "best_checkpoint_optim"
+	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
+	torch.save(optimizer.state_dict(),save_path)
+
+
+def save_data(args,model,optimizer,best = False):
+	save_model(args,model,best)
+	save_optimizer(args,optimizer,best)

@@ -6,7 +6,7 @@ import random
 
 class UNet(nn.Module):
 	"""docstring for JointNet"""
-	def __init__(self, k_size = 3, p_size = 2, num_classes=7, pad_type="zero",encoder_only = False, feature_size = None):
+	def __init__(self, k_size = 3, p_size = 2, num_classes=7, pad_type="zero",encoder_only = False, feature_size = None,image_size=128):
 		"""
 		the inputs should be 128x128
 		"""
@@ -17,6 +17,9 @@ class UNet(nn.Module):
 		self.num_classes = num_classes
 		self.encoder_only = encoder_only
 		self.feature_size = feature_size
+		self.image_size = image_size
+		self.crit1 = nn.MSELoss()
+		self.crit2 = nn.CrossEntropyLoss()
 		if pad_type == "reflect":
 			pad_layer = nn.ReflectionPad2d((k_size-1)/2)
 		else:
@@ -145,13 +148,13 @@ class UNet(nn.Module):
 
 		if feature_size:
 			self.out_classify_linear = nn.Sequential(
-			nn.Linear(16+feature_size,16),
+			nn.Linear((self.image_size/16)**2+feature_size,16),
 			nn.ReLU(True),
 			nn.Linear(16,num_classes)
 			)
 		else:
 			self.out_classify_linear = nn.Sequential(
-			nn.Linear(16,16),
+			nn.Linear((self.image_size/16)**2,16),
 			nn.ReLU(True),
 			nn.Linear(16,num_classes)
 
@@ -170,8 +173,10 @@ class UNet(nn.Module):
 
 		
 
-	def forward(self, images,features = None):
+	def forward(self, images, labels, features = None,labeled = True):
+		loss = 0
 		N = images.size()[0]
+		images /= 255
 		out1 = self.seq1(images)
 		# print out1
 		out2 = self.max_pool(out1)
@@ -187,6 +192,10 @@ class UNet(nn.Module):
 		if self.feature_size:
 			out_class = torch.cat((out_class,features),1)
 		out_class = self.out_classify_linear(out_class)
+		if labeled:
+			# print out_class,labels
+			loss += self.crit2(out_class,labels)
+			# print loss.data
 		if not self.encoder_only:
 			in_down_4 = self.up_conv4(out_bot)
 			# print(out4,out_bot,in_down_4)
@@ -202,6 +211,8 @@ class UNet(nn.Module):
 			in_1 = torch.cat((out1,in_down_1),1)																																																																													
 			in_1 = self.upseq1(in_1)
 			final_out = self.final_layer(in_1)
+			loss2 = self.crit1(final_out,images)
+			loss += loss2
+			# print loss2.data
 		
-			return out_class, final_out
-		return out_class
+		return loss, out_class
