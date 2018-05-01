@@ -34,6 +34,7 @@ def get_args():
     parser.add_argument('-a', "--data_dir", default="data")
     parser.add_argument('-w', "--image_size", default=64, type=int)
     parser.add_argument('-f', "--shuffle", default=True, type=bool)
+    parser.add_argument('-z', "--use_unlabeled", default=False, type=bool)
 
     return parser.parse_args()
 
@@ -154,10 +155,33 @@ def train_epoch(args,labeled_iterator, unlabeled_iterator, model, optimizer):
 		#Log info
 		if (num_batches)%args.save_every == 0:
 			save_data(args,model,optimizer)
-		print "Loss:", loss.data[0], "Accuracy", temp_accuracy
+		print "Loss:", loss.data.cpu().numpy(), "Accuracy", temp_accuracy
 
-	total_training_loss /= num_batches
 	accuracy /= num_batches
+	if args.use_unlabeled:
+		for batch in tqdm(unlabeled_iterator):
+			if HAVE_CUDA:
+				batch[0] = batch[0].cuda()
+				batch[1] = batch[1].cuda()
+				batch[2] = batch[2].cuda()
+			optimizer.zero_grad()
+			# Forward pass
+			batch_data = ag.Variable(batch[0].float())
+			batch_labels = ag.Variable(np.squeeze(batch[1]-1).long())
+			batch_features = ag.Variable(batch[2])
+			loss,pred_labels = model(batch_data,batch_labels,batch_features,labeled=False)
+			loss.backward()
+			total_training_loss += loss.data.cpu().numpy()
+
+			#Optimize
+			optimizer.step()
+			num_batches += 1
+
+			#Log info
+			if (num_batches)%args.save_every == 0:
+				save_data(args,model,optimizer)
+			print "Loss:", loss.data.cpu().numpy(), "Accuracy", temp_accuracy
+		total_training_loss /= num_batches
 
 	return total_training_loss, accuracy
 

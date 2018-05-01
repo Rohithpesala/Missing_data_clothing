@@ -9,7 +9,7 @@ def get_metrics(preds,truths):
 	N = preds.size()[0]*1.0
 	correct = torch.sum(pred_inds.data == truths.data)
 	# print pred_inds,truths,correct
-	return correct/N
+	return correct.cpu().numpy()/N
 
 def load_labels(directory):
 	"""
@@ -146,7 +146,7 @@ def save_model(args,model,best=False):
 	if best:
 		checkpoint_name = "best_checkpoint"
 	save_path = os.path.join(os.getcwd(),args.output_dir,args.run_id,"save",checkpoint_name)
-	torch.save(model.cpu(),save_path)
+	torch.save(model,save_path)
 
 def save_optimizer(args,optimizer,best=False):
 	checkpoint_name = "last_checkpoint_optim"
