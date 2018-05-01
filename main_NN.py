@@ -167,7 +167,7 @@ def train_epoch(args,labeled_iterator, unlabeled_iterator, model, optimizer):
 			optimizer.zero_grad()
 			# Forward pass
 			batch_data = ag.Variable(batch[0].float())
-			batch_labels = ag.Variable(np.squeeze(batch[1]-1).long())
+			batch_labels = ag.Variable(np.squeeze(batch[1]))
 			batch_features = ag.Variable(batch[2])
 			loss,pred_labels = model(batch_data,batch_labels,batch_features,labeled=False)
 			loss.backward()
@@ -180,8 +180,8 @@ def train_epoch(args,labeled_iterator, unlabeled_iterator, model, optimizer):
 			#Log info
 			if (num_batches)%args.save_every == 0:
 				save_data(args,model,optimizer)
-			print "Loss:", loss.data.cpu().numpy(), "Accuracy", temp_accuracy
-		total_training_loss /= num_batches
+			print "Loss:", loss.data.cpu().numpy()
+	total_training_loss /= num_batches
 
 	return total_training_loss, accuracy
 

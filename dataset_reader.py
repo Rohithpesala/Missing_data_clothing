@@ -72,6 +72,8 @@ class imageLoader(data.Dataset):
 	def __getitem__(self, index):
 		img_path = self.imageIds[index].rstrip()
 		lbl = self.labelIds[index]
+		if np.isnan(lbl):
+			lbl = 0
 		f_present = self.f_Ids[index]
 		img = Image.open(img_path)
 		img = img.resize(self.img_size, Image.NEAREST)
