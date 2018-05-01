@@ -24,9 +24,9 @@ y_test = labels_arr[mask["test"]]
 
 print X_train.shape, X_test.shape
 
-# classifier = KNeighborsClassifier(n_neighbors=8) 
-classifier = svm.LinearSVC(C=0.1)
-# classifier = svm.SVC(kernel='rbf', gamma=0.5, C=0.1)
+# classifier = KNeighborsClassifier(n_neighbors=5) 
+# classifier = svm.LinearSVC(C=0.1)
+classifier = svm.SVC(kernel='rbf', gamma=0.5, C=0.1)
 
 classifier.fit(X_train, y_train)
 y_pred = classifier.predict(X_test) 
