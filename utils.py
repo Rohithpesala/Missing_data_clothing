@@ -7,7 +7,7 @@ import torch
 def get_metrics(preds,truths):
 	_,pred_inds = torch.max(preds,1)
 	N = preds.size()[0]*1.0
-	correct = torch.sum(pred_inds.data == truths.data)
+	correct = torch.FloatTensor([torch.sum(pred_inds.data == truths.data)])
 	# print pred_inds,truths,correct
 	return correct.cpu().numpy()/N
 

@@ -35,6 +35,7 @@ def get_args():
     parser.add_argument('-w', "--image_size", default=64, type=int)
     parser.add_argument('-f', "--shuffle", default=True, type=bool)
     parser.add_argument('-z', "--use_unlabeled", default=False, type=bool)
+    parser.add_argument('-y', "--encoder_only", default=False, type=bool)
 
     return parser.parse_args()
 
@@ -58,7 +59,7 @@ def train(args):
 	best_epoch = -1
 
 	# instantiate model and optimizer
-	model = UNet(feature_size = 25,image_size = args.image_size)
+	model = UNet(feature_size = 25,image_size = args.image_size,encoder_only = args.encoder_only)
 	model.train()
 	if HAVE_CUDA:
 		model = model.cuda()
